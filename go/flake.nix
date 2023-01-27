@@ -1,40 +1,72 @@
 {
-  description = "A Go Module Nix Flake.";
+  description = "A Go Module Template";
 
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    gomod2nix-src.url = "github:tweag/gomod2nix";
+    fu.url = "github:numtide/flake-utils";
+    gomod2nix.url = "github:nix-community/gomod2nix";
+    flake-compat.url = "github:edolstra/flake-compat";
+    flake-compat.flake = false;
   };
 
-  outputs = { self, nixpkgs, flake-utils, gomod2nix-src }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs = {
+    self,
+    nixpkgs,
+    fu,
+    gomod2nix,
+    flake-compat,
+  }: (
+    fu.lib.eachDefaultSystem
+    (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [gomod2nix.overlays.default];
+      };
 
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ gomod2nix-src.overlay ];
+      goVersion = pkgs.go_1_19;
+
+      app = pkgs.callPackage ./. {
+        src = ./.;
+        pwd = ./.;
+        go = goVersion;
+      };
+    in {
+      # Packages, can be built with `nix build .#` or `nix build .#hello-world`
+      packages.hello-world = app;
+      packages.default = app;
+
+      # Runnables can be triggered with `nix run .#` or `nix run .#hello-world`
+      apps = rec {
+        default = hello-world;
+        hello-world = {
+          type = "app";
+          program = "${app}/bin/hello-world";
         };
+      };
 
-        hello-world = pkgs.buildGoApplication {
-          pname = "hello-world";
-          version = "0.1";
-          src = ./.;
-          modules = ./gomod2nix.toml;
-        };
+      # Development shell triggered by `nix develop`
+      devShells.default = pkgs.callPackage ./shell.nix {go = goVersion;};
 
-      in
-      rec {
-        packages = flake-utils.lib.flattenTree { hello-world = hello-world; };
+      # Linter command triggered by: `nix flake check`
+      checks.lint =
+        pkgs.runCommand "go-lint" {
+          nativeBuildInputs = with pkgs; [go golangci-lint];
+        }
+        ''
+          cd ${./.}
+          HOME=$TMPDIR golangci-lint run --config ${./.golangci.yml}
+          # need to create out in order for this to be a valid derivation.
+          touch $out
+        '';
 
-        defaultPackage = packages.hello-world;
-
-        apps.hello-world =
-          flake-utils.lib.mkApp { drv = packages.hello-world; };
-
-        defaultApp = apps.hello-world;
-
-        devShell =
-          pkgs.mkShell { buildInputs = with pkgs; [ go_1_17 gomod2nix golangci-lint ]; };
-      });
+      # format all command triggerd by: `nix fmt`
+      formatter = pkgs.writeShellApplication {
+        name = "format-all";
+        runtimeInputs = with pkgs; [goVersion alejandra gotools treefmt];
+        text = ''
+          treefmt
+        '';
+      };
+    })
+  );
 }

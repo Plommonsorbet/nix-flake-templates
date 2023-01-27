@@ -1,0 +1,14 @@
+[formatter.go]
+command = "gofmt"
+options = ["-w"]
+includes = ["*.go"]
+
+[formatter.go-imports]
+command = "goimports"
+options = ["-w"]
+includes = ["*.go"]
+
+[formatter.nix]
+command = "alejandra"
+options = ["-q"]
+includes = ["*.nix"]

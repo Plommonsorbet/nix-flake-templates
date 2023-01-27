@@ -1,7 +1,3 @@
-["github.com/google/uuid"]
-  sumVersion = "v1.3.0"
-  ["github.com/google/uuid".fetch]
-    type = "git"
-    url = "https://github.com/google/uuid"
-    rev = "44b5fee7c49cf3bcdf723f106b36d56ef13ccc88"
-    sha256 = "0imkw52m7fzrwsdj2rfrk3zbplqfbwncyv6hv89xw0vdw3jpk122"
+schema = 3
+
+[mod]

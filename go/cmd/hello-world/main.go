@@ -1,9 +1,10 @@
 package main
 
 import (
-	"hello-world/internal/reply"
+	"fmt"
+	"hello-world/internal/greet"
 )
 
 func main() {
-	 reply.SayHelloWorld()
+	fmt.Println(greet.FormatGreeting("Dog Person")) //nolint:forbidigo // Cli Response
 }
