@@ -18,7 +18,7 @@
         };
 
         rust_build = pkgs.rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
-          extensions = [ "rust-src" ];
+          extensions = [ "rust-src" "rls" "rust-analyzer" ];
           targets = [ "x86_64-unknown-linux-gnu" ];
         });
 
